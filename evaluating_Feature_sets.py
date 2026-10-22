@@ -1,9 +1,9 @@
 import pandas as pd
-from data_prep_winsor import prepped as prepped_winsor
-from data_prep_winsor import FEATURES as FEATURES_winsor
-from KNN_model import KNNBoost
+from data_prep_LGBM_HGB import prepped as prepped_winsor
+from data_prep_LGBM_HGB import FEATURES as FEATURES_winsor
+from Final_model import KNNBoost
 from sklearn.metrics import auc, precision_recall_curve, recall_score, precision_score
-from KNN_model import KNNBoost
+from Final_model import KNNBoost
 
 """Candidate feature sets to compare for the KNN + gradient boosting model.
 
@@ -88,7 +88,7 @@ train_winsor, test_winsor = prepped_winsor[FILE]
 results = []   # one row of metrics per feature set
 for name, FEATURES_winsor in CONFIGS.items():
     #Winsor model performance on this feature set
-    model_KNN_winsor = KNNBoost()
+    model_KNN_winsor = KNNBoost(model="lgbm")
     model_KNN_winsor.fit(train_winsor[FEATURES_winsor],train_winsor["class"])
     predictions_winsor = model_KNN_winsor.predict(test_winsor[FEATURES_winsor])
     #####metrics
