@@ -1,6 +1,6 @@
 from data_prep_LGBM_HGB import prepped as prepped_winsor
 from data_prep_LGBM_HGB import FEATURES as FEATURES_winsor
-from clean_KNN_model import KNNBoost
+from Final_model import KNNBoost
 from sklearn.metrics import auc, precision_recall_curve, recall_score, precision_score
 
 #Winsor model performance
