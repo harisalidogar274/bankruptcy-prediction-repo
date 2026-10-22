@@ -1,12 +1,12 @@
-from data_prep_winsor import prepped as prepped_winsor
-from data_prep_winsor import FEATURES as FEATURES_winsor
+from data_prep_LGBM_HGB import prepped as prepped_winsor
+from data_prep_LGBM_HGB import FEATURES as FEATURES_winsor
 from clean_KNN_model import KNNBoost
 from sklearn.metrics import auc, precision_recall_curve, recall_score, precision_score
 
 #Winsor model performance
 train_winsor, test_winsor = prepped_winsor["csv_result-1year.csv"] 
-model_KNN_winsor = KNNBoost()
-model_KNN_winsor.fit(train_winsor[FEATURES_winsor],train_winsor["class"])
+model_KNN_winsor = KNNBoost(model="lgbm")
+model_KNN_winsor.fit(train_winsor[FEATURES_winsor], train_winsor["class"], sample_weight=train_winsor["weight"])
 predictions_winsor = model_KNN_winsor.predict(test_winsor[FEATURES_winsor])
 #####metrics
 sensitivity_score_winsor=recall_score(test_winsor['class'], predictions_winsor)

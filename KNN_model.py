@@ -141,48 +141,6 @@ class KNNBoost(KNN):
             return X
         return np.c_[X, self._class_1_proportions(X, leave_one_out)]
 
-    def find_optimal_threshold_beta(self):
-        beta = 4  # F-beta weight: beta > 1 favours recall (catching bankruptcies), beta < 1 favours precision, 1 = balanced
-        #scores every TRAINING company by the share of class 1 among its k nearest OTHER training companies
-        #(leave-one-out, so a company never counts as its own neighbour), then picks the cutoff that maximises
-        #the F-beta score (precision and recall, with recall counted beta times as important as precision).
-        X = np.asarray(self.X_train, dtype=float)
-        y = np.asarray(self.y_train).astype(int)
-        squared_norms = np.sum(X**2, axis=1)
-        class_1_proportions = np.empty(len(X))
-        for start in range(0, len(X), 500):#chunks keep memory small; numpy does all the distances at once
-            chunk = X[start:start+500]
-            squared_distance = np.sum(chunk**2, axis=1)[:, None] + squared_norms[None, :] - 2 * chunk @ X.T
-            squared_distance[np.arange(len(chunk)), np.arange(start, start+len(chunk))] = np.inf
-            k_indices = np.argpartition(squared_distance, self.k - 1, axis=1)[:, :self.k]
-            class_1_proportions[start:start+len(chunk)] = y[k_indices].mean(axis=1)
-        precision, recall, thresholds = precision_recall_curve(y, class_1_proportions)
-        f_beta = (1 + beta**2) * precision * recall / np.maximum(beta**2 * precision + recall, 1e-12)
-        best_threshold = thresholds[np.argmax(f_beta[:-1])]#last point has no threshold, so it is left out
-        if np.isfinite(best_threshold) and best_threshold > 0:#safety: keep the old 10% if no usable cutoff exists
-            self.threshold = float(best_threshold)
-        return self.threshold
-
-    def find_optimal_threshold(self):
-        #scores every TRAINING company by the share of class 1 among its k nearest OTHER training companies
-        #(leave-one-out, so a company never counts as its own neighbour), then picks the cutoff that maximises
-        #true positive rate - false positive rate (Youden's J = balanced accuracy) on the ROC curve.
-        X = np.asarray(self.X_train, dtype=float)
-        y = np.asarray(self.y_train).astype(int)
-        squared_norms = np.sum(X**2, axis=1)
-        class_1_proportions = np.empty(len(X))
-        for start in range(0, len(X), 500):#chunks keep memory small; numpy does all the distances at once
-            chunk = X[start:start+500]
-            squared_distance = np.sum(chunk**2, axis=1)[:, None] + squared_norms[None, :] - 2 * chunk @ X.T
-            squared_distance[np.arange(len(chunk)), np.arange(start, start+len(chunk))] = np.inf
-            k_indices = np.argpartition(squared_distance, self.k - 1, axis=1)[:, :self.k]
-            class_1_proportions[start:start+len(chunk)] = y[k_indices].mean(axis=1)
-        fpr, tpr, thresholds = roc_curve(y, class_1_proportions)
-        best_threshold = thresholds[np.argmax(tpr - fpr)]
-        if np.isfinite(best_threshold) and best_threshold > 0:#safety: keep the old 10% if no usable cutoff exists
-            self.threshold = float(best_threshold)
-        return self.threshold
-
     def fit(self, X, y):
         self.X_train = np.asarray(X, dtype=float)
         self.y_train = np.asarray(y).astype(int)
@@ -191,11 +149,7 @@ class KNNBoost(KNN):
         cv = StratifiedKFold(5, shuffle=True, random_state=0)
         out_of_fold = cross_val_predict(clone(self.booster), X_all, self.y_train, cv=cv, method="predict_proba")[:, 1]
         fpr, tpr, thresholds = roc_curve(self.y_train, out_of_fold)
-        ######################################################################
-        #best_threshold = self.find_optimal_threshold()
-        best_threshold = self.find_optimal_threshold_beta()
-        #best_threshold = 0.10
-        ######################################################################
+        best_threshold = thresholds[np.argmax(tpr - fpr)]
         if np.isfinite(best_threshold):
             self.threshold = float(best_threshold)
         self.booster.fit(X_all, self.y_train)

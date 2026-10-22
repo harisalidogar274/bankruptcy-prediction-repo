@@ -149,6 +149,9 @@ Requires Python with `pandas`, `numpy` and `scikit-learn`, plus `scipy` for the 
 
 **Decision.** Winsorizing (`data_prep_winsor.py`) is the version used for all modelling going forward, because it gave better PR-AUC and recall in every file tested. `data_prep_CHAID.py` (CHAID) is kept for reference and for reproducing the comparison.
 
+**What threshold was used for this evaluation?**  
+When called through the testing script, the model dynamically optimizes its decision threshold during training using Youden's J Index (Balanced Accuracy, maximizing True Positive Rate minus False Positive Rate) calculated via an ROC curve on out-of-fold cross-validation probability predictions from the training set.
+
 ### 1.11 Glossary
 
 | Term | Meaning |
@@ -243,6 +246,9 @@ F has the best average PR-AUC and sensitivity, won three of the five files, and 
 **How strong is the evidence?** F is the best-supported choice, not a proven one. Its lead over the starting set is small (about 1.5 points of PR-AUC on average), the starting set beat it in files 2 and 4, and the starting set is simpler (6 ratios against 12). Each test set holds only roughly 50 to 100 bankrupt companies, so a difference of one or two companies moves the scores. The winner was also picked using the same test data that scored it, so F's scores are probably somewhat optimistic.
 
 **Next step in the code.** `FEATURES` in `data_prep_winsor.py` is set to set F's 12 columns instead of the combined list of all candidates, so the data are prepared on those 12 columns alone. This changes which companies are kept and the train/test split slightly, so later results will not match the comparison tables exactly. To rerun the comparison, set `FEATURES` back to `ALL_COLUMNS`.
+
+**What threshold was used for this evaluation?**  
+When called through the feature evaluation script, each feature set trains using the hybrid model, which automatically tunes its decision threshold during training using Youden's J Index (Balanced Accuracy) derived from out-of-fold cross-validation probability predictions on the training set.
 
 ## 3. Models and results
 

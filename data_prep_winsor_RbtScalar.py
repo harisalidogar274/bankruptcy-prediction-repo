@@ -2,8 +2,8 @@
 
 Same as data_prep.py, except outliers are handled by clipping each ratio to its
 1st and 99th percentile instead of CHAID binning, so the two can be compared.
-clean -> drop duplicates -> train/test split -> winsorize -> standardise.
-Everything that is learned (percentiles, mean, std) is learned on TRAIN only, then applied to TEST.
+clean -> drop duplicates -> train/test split -> winsorize -> robust scale.
+Everything that is learned (percentiles, median, IQR) is learned on TRAIN only, then applied to TEST.
 
 The cleaning, duplicate removal and split are identical to data_prep.py (same SEED), so both
 versions produce the SAME train and test rows; only the feature values differ.
@@ -15,7 +15,7 @@ Usage:
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
 ##########
 FEATURES = ["Attr1", "Attr3", "Attr6", "Attr8", "Attr9", "Attr46","Attr22", "Attr42", "Attr25", "Attr15", "Attr40", "Attr52"] #FEATURES decided based on evalution of feature sets.
 PATHS = [f"csv_result-{i}year.csv" for i in range(1, 6)]   # edit to your file names
@@ -48,8 +48,8 @@ def prep(path):
     train[FEATURES] = train[FEATURES].clip(low, high, axis=1)
     test[FEATURES] = test[FEATURES].clip(low, high, axis=1)
 
-    # 6. standardise: mean/std learned on train only
-    scaler = StandardScaler().fit(train[FEATURES])
+    # 6. robust scale: median/IQR learned on train only
+    scaler = RobustScaler().fit(train[FEATURES])
     train[FEATURES] = scaler.transform(train[FEATURES])
     test[FEATURES] = scaler.transform(test[FEATURES])
 
